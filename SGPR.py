@@ -3,16 +3,32 @@ from models import SOR_AdaptiveCrossApproximation
 from models import SOR_RandomInducingPoints
 from models import KISS
 from models import SKIP
+from utils import load_precipitations, load_audio
 from scipy.io import loadmat
 import gpytorch
 import torch
 
-# Read input data
+# Read elevators
 data = torch.Tensor(loadmat('data/elevators.mat')['data'])
 X = data[:, :-1]
+y = data[:, -1]
+
+# Read precipitations
+X, y = load_precipitations()
+
+# Read audio
+# X, y = load_audio()
+
+# Preprocessing
+X, y = torch.Tensor(X), torch.Tensor(y)
 X = X - X.min(0)[0]
 X = 2 * (X / X.max(0)[0]) - 1
-y = data[:, -1]
+
+# Randomize the data
+torch.manual_seed(42)
+permutation = torch.randperm(X.shape[0])
+X = X[permutation]
+y = y[permutation]
 
 # Training set
 train_n = int(floor(0.8 * len(X)))
@@ -23,17 +39,22 @@ train_y = y[:train_n].contiguous()
 test_x = X[train_n:, :].contiguous()
 test_y = y[train_n:].contiguous()
 
+print(
+    f"Train shape: {train_x.shape, train_y.shape} | "
+    f"Test shape: {test_x.shape, test_y.shape}"
+)
+
 likelihood = gpytorch.likelihoods.GaussianLikelihood()
 
 # model = SOR_RandomInducingPoints(
-#     train_x, train_y, m=10, likelihood=likelihood)
-# model = SOR_AdaptiveCrossApproximation(
-#     train_x, train_y, likelihood=likelihood,
-#     eps=1000, m=20)
+#     train_x, train_y, m=200, likelihood=likelihood)
+model = SOR_AdaptiveCrossApproximation(
+    train_x, train_y, likelihood=likelihood,
+    eps=1000, m=20)
 # model = KISS(
-#     train_x, train_y, likelihood=likelihood, m=4)
-model = SKIP(
-    train_x, train_y, likelihood=likelihood, m=400)
+#     train_x, train_y, likelihood=likelihood, m=20)
+# model = SKIP(
+#     train_x, train_y, likelihood=likelihood, m=20)
 
 # Number of epochs
 training_iterations = 100
