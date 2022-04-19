@@ -1,4 +1,5 @@
 from enum import Enum, auto
+from typing import Union
 import numpy as np
 
 
@@ -17,7 +18,7 @@ def adaptive_cross_approximation(
     partial_pivoting: bool = False, spsd: bool = False,
     return_indeces: bool = False,
     verbose: bool = False
-) -> tuple[np.ndarray, np.ndarray] | tuple[list[int], list[int]]:
+) -> Union[tuple[np.ndarray, np.ndarray], tuple[list[int], list[int]]]:
 
     # Shape
     n, m = A.shape
