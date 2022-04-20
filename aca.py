@@ -2,9 +2,7 @@ import torch
 
 
 def slow_adaptive_cross_approximation(
-    A: torch.Tensor, eps: float = 10, max_iter: int = 200,
-    precision: float = 1e-5, verbose: bool = False,
-    debug: bool = False
+    A: torch.Tensor, max_iter: int = 200, verbose: bool = False,
 ) -> list[int]:
 
     n, _ = A.shape
@@ -41,7 +39,7 @@ def slow_adaptive_cross_approximation(
 
 
 def adaptive_cross_approximation(
-    A: torch.Tensor, eps: float = 10, max_iter: int = 200,
+    A: torch.Tensor, max_iter: int = 200,
     precision: float = 1e-5, verbose: bool = False,
     debug: bool = False
 ) -> list[int]:
