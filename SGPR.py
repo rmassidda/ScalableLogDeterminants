@@ -1,43 +1,43 @@
 from math import floor
+from matplotlib import pyplot as plt
 from models import SOR_AdaptiveCrossApproximation
 from models import SOR_RandomInducingPoints
 from models import KISS
 from models import SKIP
-from utils import load_precipitations, load_audio
+from utils import load_precipitations, load_audio, load_redundant_wave
+from utils import plot_model
 from scipy.io import loadmat
 import gpytorch
 import torch
 
 # Read elevators
-data = torch.Tensor(loadmat('data/elevators.mat')['data'])
-X = data[:, :-1]
-y = data[:, -1]
+# data = torch.Tensor(loadmat('data/elevators.mat')['data'])
+# X = data[:, :-1]
+# y = data[:, -1]
 
 # Read precipitations
-X, y = load_precipitations()
+# X, y = load_precipitations()
 
 # Read audio
 # X, y = load_audio()
 
+# Read reduntant wave
+train_x, train_y, test_x, test_y = load_redundant_wave()
+
 # Preprocessing
-X, y = torch.Tensor(X), torch.Tensor(y)
-X = X - X.min(0)[0]
-X = 2 * (X / X.max(0)[0]) - 1
+train_x = torch.Tensor(train_x)
+train_y = torch.Tensor(train_y)
+test_x = torch.Tensor(test_x)
+test_y = torch.Tensor(test_y)
+# X, y = torch.Tensor(X), torch.Tensor(y)
+# X = X - X.min(0)[0]
+# X = 2 * (X / X.max(0)[0]) - 1
 
-# Randomize the data
-torch.manual_seed(42)
-permutation = torch.randperm(X.shape[0])
-X = X[permutation]
-y = y[permutation]
-
-# Training set
-train_n = int(floor(0.8 * len(X)))
-train_x = X[:train_n, :].contiguous()
-train_y = y[:train_n].contiguous()
-
-# Test set
-test_x = X[train_n:, :].contiguous()
-test_y = y[train_n:].contiguous()
+# Eventually plot data
+dimensionality = train_x.shape[1]
+if dimensionality == 1:
+    plt.plot(train_x, train_y, ".")
+    plt.show()
 
 print(
     f"Train shape: {train_x.shape, train_y.shape} | "
@@ -46,11 +46,10 @@ print(
 
 likelihood = gpytorch.likelihoods.GaussianLikelihood()
 
-# model = SOR_RandomInducingPoints(
-#     train_x, train_y, m=200, likelihood=likelihood)
-model = SOR_AdaptiveCrossApproximation(
-    train_x, train_y, likelihood=likelihood,
-    eps=1000, m=20)
+model = SOR_RandomInducingPoints(
+    train_x, train_y, m=5, likelihood=likelihood)
+# model = SOR_AdaptiveCrossApproximation(
+#     train_x, train_y, likelihood=likelihood, m=5)
 # model = KISS(
 #     train_x, train_y, likelihood=likelihood, m=20)
 # model = SKIP(
@@ -68,6 +67,30 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
 # "Loss" for GPs - the marginal log likelihood
 mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
+
+
+def eval():
+    model.eval()
+    likelihood.eval()
+
+    # Plot model before training
+    if dimensionality == 1:
+        # Eventually get inducing points
+        if isinstance(model, SOR_RandomInducingPoints) or \
+           isinstance(model, SOR_AdaptiveCrossApproximation):
+            inducing_points = model.covar_module.inducing_points
+        else:
+            inducing_points = None
+
+        plot_model(model, likelihood, train_x, train_y, test_x,
+                   inducing_points)
+
+
+
+    mse_train = gpytorch.metrics.mean_squared_error(model(train_x), train_y)
+    mse_test = gpytorch.metrics.mean_squared_error(model(test_x), test_y)
+
+    print(f"MSE train: {mse_train.item():.3f} | MSE test: {mse_test.item():.3f}")
 
 
 def train():
@@ -116,4 +139,6 @@ def train():
         likelihood.train()
 
 
+eval()
 train()
+eval()
