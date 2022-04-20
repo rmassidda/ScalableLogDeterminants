@@ -16,10 +16,10 @@ import torch
 # y = data[:, -1]
 
 # Read precipitations
-# X, y = load_precipitations()
+# train_x, train_y, test_x, test_y = load_precipitations()
 
 # Read audio
-# X, y = load_audio()
+# train_x, train_y, test_x, test_y = load_audio()
 
 # Read reduntant wave
 train_x, train_y, test_x, test_y = load_redundant_wave()
@@ -44,7 +44,7 @@ print(
 likelihood = gpytorch.likelihoods.GaussianLikelihood()
 
 model = SOR_RandomInducingPoints(
-    train_x, train_y, m=10, likelihood=likelihood)
+    train_x, train_y, m=20, likelihood=likelihood)
 # model = SOR_AdaptiveCrossApproximation(
 #     train_x, train_y, likelihood=likelihood, m=10)
 # model = KISS(
@@ -54,10 +54,6 @@ model = SOR_RandomInducingPoints(
 
 # Number of epochs
 training_iterations = 100
-
-# Find optimal model hyperparameters
-model.train()
-likelihood.train()
 
 # Use the adam optimizer
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
@@ -78,23 +74,34 @@ def eval():
             inducing_points = model.covar_module.inducing_points
         else:
             inducing_points = None
+        with gpytorch.settings.fast_pred_var(), \
+             gpytorch.settings.max_root_decomposition_size(100):
+            plot_model(model, likelihood, train_x, train_y, test_x,
+                       inducing_points)
 
-        plot_model(model, likelihood, train_x, train_y, test_x,
-                   inducing_points)
-
-    mse_train = gpytorch.metrics.mean_squared_error(model(train_x), train_y)
-    mse_test = gpytorch.metrics.mean_squared_error(model(test_x), test_y)
-
-    print(f"MSE train: {mse_train.item():.3f} | MSE test: {mse_test.item():.3f}")
+    with gpytorch.settings.fast_pred_var(), \
+            gpytorch.settings.max_root_decomposition_size(100):
+        mse_train = gpytorch.metrics.mean_squared_error(
+            model(train_x), train_y)
+        mse_test = gpytorch.metrics.mean_squared_error(model(test_x), test_y)
+        print(
+            f"MSE train: {mse_train.item():.3f} | "
+            f"MSE test: {mse_test.item():.3f}")
 
 
 def train():
+    # Find optimal model hyperparameters
+    model.train()
+    likelihood.train()
+
     for epoch in range(training_iterations):
         # Init optimization step
         optimizer.zero_grad()
 
         # Posterior distribution
-        output = model(train_x)
+        with gpytorch.settings.fast_pred_var(), \
+             gpytorch.settings.max_root_decomposition_size(100):
+            output = model(train_x)
 
         # Extract the negative marginal likelihood
         pos_mll = mll(output, train_y)
@@ -106,8 +113,8 @@ def train():
         optimizer.step()
 
         # Model in evaluation mode
-        model.eval()
-        likelihood.eval()
+        # model.eval()
+        # likelihood.eval()
 
         # TODO: Lengthscale
         lengthscale = 0.
@@ -116,22 +123,22 @@ def train():
         noise = 0.
 
         # MSE
-        mse_train = gpytorch.metrics.mean_squared_error(output, train_y)
-        mse_test = gpytorch.metrics.mean_squared_error(model(test_x), test_y)
+        # mse_train = gpytorch.metrics.mean_squared_error(output, train_y)
+        # mse_test = gpytorch.metrics.mean_squared_error(model(test_x), test_y)
 
         # Verbose
         print(
             f"Epoch {epoch:03d} | "
             f"-mll: {neg_mll.item():.3f} | "
-            f"MSE train: {mse_train.item():.3f} | "
-            f"MSE test: {mse_test.item():.3f} | "
+            # f"MSE train: {mse_train.item():.3f} | "
+            # f"MSE test: {mse_test.item():.3f} | "
             f"Lengthscale: {lengthscale:.3f} | "
             f"Noise: {noise:.3f}"
         )
 
         # Reset training mode
-        model.train()
-        likelihood.train()
+        # model.train()
+        # likelihood.train()
 
 
 eval()

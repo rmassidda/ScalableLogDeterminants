@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 
-def load_precipitations() -> tuple[np.ndarray, np.ndarray]:
+def load_precipitations() -> tuple[np.ndarray, ...]:
 
     # List to accumulate the examples
     X = []
@@ -35,9 +35,18 @@ def load_precipitations() -> tuple[np.ndarray, np.ndarray]:
     # Make the typechecker happy
     assert isinstance(X, np.ndarray) and isinstance(y, np.ndarray)
 
-    y = y.reshape(-1)
+    # Permutate samples
+    perm = np.random.permutation(X.shape[0])
+    X = X[perm]
+    y = y[perm]
 
-    return X, y
+    # Split into training and test sets
+    train_x = X[:int(0.8*X.shape[0])]
+    train_y = y[:int(0.8*X.shape[0])].reshape(-1)
+    test_x = X[int(0.8*X.shape[0]):]
+    test_y = y[int(0.8*X.shape[0]):].reshape(-1)
+
+    return train_x, train_y, test_x, test_y
 
 
 def load_audio():
@@ -45,19 +54,17 @@ def load_audio():
     # Load the MATLAB matrix
     m = loadmat("data/audio_data.mat")
 
-    # Load the full dataset
-    X, y = m["xfull"], m["yfull"]
+    # Train set
+    X_train, y_train = m["xtrain"], m["ytrain"]
+    X_train = X_train.astype(np.float32)
+    y_train = y_train.astype(np.float32).reshape(-1)
 
-    X = X.astype(np.float32)
-    y = y.astype(np.float32).reshape(-1)
+    # Test set
+    X_test, y_test = m["xtest"], m["ytest"]
+    X_test = X_test.astype(np.float32)
+    y_test = y_test.astype(np.float32).reshape(-1)
 
-    return X, y
-
-    # # Load the train and test sets
-    # X_train, y_train = m["xtrain"], m["ytrain"]
-    # X_test, y_test = m["xtest"], m["ytest"]
-
-    # return X_train, y_train, X_test, y_test
+    return X_train, y_train, X_test, y_test
 
 
 def load_redundant_wave(a: float = 1.3, b: float = 0.5) \
