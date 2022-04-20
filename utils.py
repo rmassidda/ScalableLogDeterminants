@@ -164,6 +164,9 @@ def plot_data(data, dataset, metric):
     plt.xlabel("m")
     plt.ylabel(metric)
 
+    # Log scale y
+    plt.yscale('log')
+
     plt.plot(
         data[dataset]['random']['range'],
         data[dataset]['random'][metric],
@@ -181,6 +184,7 @@ def plot_data(data, dataset, metric):
         data[dataset]['KISS'][metric],
         label='KISS'
     )
+
     # Show legend
     plt.legend()
     plt.savefig(f"{dataset}_{metric}.png")
