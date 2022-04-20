@@ -83,7 +83,7 @@ class SOR_AdaptiveCrossApproximation(gpytorch.models.ExactGP):
 
         # Identify inducing points
         inducing_points = adaptive_cross_approximation(
-            K, eps=eps,
+            K,
             max_iter=m,
             verbose=True
         )
