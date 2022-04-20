@@ -1,9 +1,32 @@
-from typing import Optional
-from scipy.io import loadmat
 from matplotlib import pyplot as plt
+from scipy.io import loadmat
+from typing import Optional
 import gpytorch
 import numpy as np
+import time
 import torch
+
+
+def load_elevators() -> tuple[np.ndarray, ...]:
+    data = torch.Tensor(loadmat('data/elevators.mat')['data'])
+    X = data[:, :-1].detach().numpy()
+    y = data[:, -1].detach().numpy()
+
+    # Fix random seed
+    np.random.seed(42)
+
+    # Permute the data
+    perm = np.random.permutation(X.shape[0])
+    X = X[perm]
+    y = y[perm]
+
+    # Split in training and test
+    train_x = X[:int(0.8*X.shape[0])]
+    train_y = y[:int(0.8*X.shape[0])]
+    test_x = X[int(0.8*X.shape[0]):]
+    test_y = y[int(0.8*X.shape[0]):]
+
+    return train_x, train_y, test_x, test_y
 
 
 def load_precipitations() -> tuple[np.ndarray, ...]:
@@ -82,7 +105,7 @@ def load_redundant_wave(a: float = 1.3, b: float = 0.5) \
     x = np.concatenate(
         (x, np.random.normal(6, 1, np.ceil(n/4).astype(np.int32)))
     )
-    y = np.sin(a * x) + b
+    y = np.sin(a * x) + b + np.random.normal(0, 5e-2, x.shape)
 
     # Training set
     x = x.reshape(-1, 1)
@@ -130,4 +153,34 @@ def plot_model(model: gpytorch.models.ExactGP, likelihood,
             # ax.plot(inducing_points.numpy(), np.zeros(inducing_points.shape[0]),
             #         'k|', markersize=15)
 
-        plt.show()
+        # Get timestamp
+        timestamp = f"{time.time():.2f}"
+        # Save plot
+        plt.savefig(f"{timestamp}.png")
+
+
+def plot_data(data, dataset, metric):
+    plt.figure(figsize=(12, 10))
+    plt.xlabel("m")
+    plt.ylabel(metric)
+
+    plt.plot(
+        data[dataset]['random']['range'],
+        data[dataset]['random'][metric],
+        label='Random inducing points'
+    )
+
+    plt.plot(
+        data[dataset]['adaptive']['range'],
+        data[dataset]['adaptive'][metric],
+        label='Adaptive inducing points'
+    )
+
+    plt.plot(
+        data[dataset]['KISS']['range'],
+        data[dataset]['KISS'][metric],
+        label='KISS'
+    )
+    # Show legend
+    plt.legend()
+    plt.savefig(f"{dataset}_{metric}.png")
