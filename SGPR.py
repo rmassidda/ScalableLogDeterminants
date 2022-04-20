@@ -178,75 +178,75 @@ def main(n_runs: int = 5):
         'precipitations': {}
     }
 
-    # Experiment 1a: Random inducing points
-    data['redundant_wave']['random'] = repeat_experiment(
-        dataset_getter=load_redundant_wave,
-        model_generator=SOR_RandomInducingPoints,
-        m_range=[1, 2, 4, 8, 16, 32, 64, 128],
-        runs=n_runs
-    )
-
-    # Experiment 1b: Adaptive inducing points
-    data['redundant_wave']['adaptive'] = repeat_experiment(
-        dataset_getter=load_redundant_wave,
-        model_generator=SOR_AdaptiveCrossApproximation,
-        m_range=[1, 2, 4, 8, 16, 32, 64, 128],
-        runs=n_runs
-    )
-
-    # Experiment 1c: KISS
-    data['redundant_wave']['KISS'] = repeat_experiment(
-        dataset_getter=load_redundant_wave,
-        model_generator=KISS,
-        m_range=[4, 8, 16, 32, 64, 128],
-        runs=n_runs
-    )
-
-    # Plot the results
-    plot_data(data, 'redundant_wave', 'mll')
-    plot_data(data, 'redundant_wave', 'mse_train')
-    plot_data(data, 'redundant_wave', 'mse_test')
-    plot_data(data, 'redundant_wave', 'time')
-
-    # Experiment 2: Show the different inizializations on redundant waves
-    tx, ty, vx, vy = load_redundant_wave()
-    plot_init(
-        SOR_RandomInducingPoints, tx, ty, vx, vy, 6
-    )
-    plot_init(
-        SOR_AdaptiveCrossApproximation, tx, ty, vx, vy, 6
-    )
-
-    # # Experiment 3a: Random inducing points
-    # data['precipitations']['random'] = repeat_experiment(
-    #     dataset_getter=load_precipitations,
+    # # Experiment 1a: Random inducing points
+    # data['redundant_wave']['random'] = repeat_experiment(
+    #     dataset_getter=load_redundant_wave,
     #     model_generator=SOR_RandomInducingPoints,
     #     m_range=[1, 2, 4, 8, 16, 32, 64, 128],
     #     runs=n_runs
     # )
 
-    # # Experiment 3b: Adaptive inducing points
-    # data['precipitations']['adaptive'] = repeat_experiment(
-    #     dataset_getter=load_precipitations,
+    # # Experiment 1b: Adaptive inducing points
+    # data['redundant_wave']['adaptive'] = repeat_experiment(
+    #     dataset_getter=load_redundant_wave,
     #     model_generator=SOR_AdaptiveCrossApproximation,
     #     m_range=[1, 2, 4, 8, 16, 32, 64, 128],
     #     runs=n_runs
     # )
 
-    # # Experiment 3c: KISS
-    # data['precipitations']['KISS'] = repeat_experiment(
-    #     dataset_getter=load_precipitations,
+    # # Experiment 1c: KISS
+    # data['redundant_wave']['KISS'] = repeat_experiment(
+    #     dataset_getter=load_redundant_wave,
     #     model_generator=KISS,
     #     m_range=[4, 8, 16, 32, 64, 128],
     #     runs=n_runs
     # )
 
     # # Plot the results
-    # plot_data(data, 'precipitations', 'mll')
-    # plot_data(data, 'precipitations', 'mse_train')
-    # plot_data(data, 'precipitations', 'mse_test')
-    # plot_data(data, 'precipitations', 'time')
+    # plot_data(data, 'redundant_wave', 'mll')
+    # plot_data(data, 'redundant_wave', 'mse_train')
+    # plot_data(data, 'redundant_wave', 'mse_test')
+    # plot_data(data, 'redundant_wave', 'time')
+
+    # # Experiment 2: Show the different inizializations on redundant waves
+    # tx, ty, vx, vy = load_redundant_wave()
+    # plot_init(
+    #     SOR_RandomInducingPoints, tx, ty, vx, vy, 6
+    # )
+    # plot_init(
+    #     SOR_AdaptiveCrossApproximation, tx, ty, vx, vy, 6
+    # )
+
+    # Experiment 3a: Random inducing points
+    data['precipitations']['random'] = repeat_experiment(
+        dataset_getter=load_precipitations,
+        model_generator=SOR_RandomInducingPoints,
+        m_range=[1, 2, 4, 8, 16, 32, 64, 128],
+        runs=n_runs
+    )
+
+    # Experiment 3b: Adaptive inducing points
+    data['precipitations']['adaptive'] = repeat_experiment(
+        dataset_getter=load_precipitations,
+        model_generator=SOR_AdaptiveCrossApproximation,
+        m_range=[1, 2, 4, 8, 16, 32, 64, 128],
+        runs=n_runs
+    )
+
+    # Experiment 3c: KISS
+    data['precipitations']['KISS'] = repeat_experiment(
+        dataset_getter=load_precipitations,
+        model_generator=KISS,
+        m_range=[4, 8, 16, 32, 64, 128],
+        runs=n_runs
+    )
+
+    # Plot the results
+    plot_data(data, 'precipitations', 'mll')
+    plot_data(data, 'precipitations', 'mse_train')
+    plot_data(data, 'precipitations', 'mse_test')
+    plot_data(data, 'precipitations', 'time')
 
 
 if __name__ == "__main__":
-    main()
+    main(1)
