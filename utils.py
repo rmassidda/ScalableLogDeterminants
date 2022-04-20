@@ -65,9 +65,15 @@ def load_redundant_wave(a: float = 1.3, b: float = 0.5) \
     # Sample n = 100 in normal distribution
     # with mean = 0 and std = 1
     n = 100
-    x = np.random.normal(0, 1, np.floor(n / 4).astype(np.int32))
+    x = np.random.normal(0, 1, np.ceil(n/4).astype(np.int32))
     x = np.concatenate(
         (x, np.random.normal(2, 0.2, np.ceil(3*n/4).astype(np.int32)))
+    )
+    x = np.concatenate(
+        (x, np.random.normal(4, 0.2, np.ceil(3*n/4).astype(np.int32)))
+    )
+    x = np.concatenate(
+        (x, np.random.normal(6, 1, np.ceil(n/4).astype(np.int32)))
     )
     y = np.sin(a * x) + b
 
@@ -81,7 +87,7 @@ def load_redundant_wave(a: float = 1.3, b: float = 0.5) \
     train_y = y[perm]
 
     # Test set
-    test_x = np.linspace(-3, 3, 100).reshape(-1, 1)
+    test_x = np.linspace(-3, 9, 100).reshape(-1, 1)
     test_y = np.sin(a * test_x) + b
     test_y = test_y.reshape(-1)
 
@@ -97,7 +103,7 @@ def plot_model(model: gpytorch.models.ExactGP, likelihood,
         observed_pred = likelihood(model(test_x))
 
         # Initialize plot
-        f, ax = plt.subplots(1, 1, figsize=(10, 10))
+        f, ax = plt.subplots(1, 1, figsize=(16, 10))
 
         # Get upper and lower confidence bounds
         lower, upper = observed_pred.confidence_region()

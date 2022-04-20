@@ -35,9 +35,6 @@ test_y = torch.Tensor(test_y)
 
 # Eventually plot data
 dimensionality = train_x.shape[1]
-if dimensionality == 1:
-    plt.plot(train_x, train_y, ".")
-    plt.show()
 
 print(
     f"Train shape: {train_x.shape, train_y.shape} | "
@@ -47,13 +44,13 @@ print(
 likelihood = gpytorch.likelihoods.GaussianLikelihood()
 
 model = SOR_RandomInducingPoints(
-    train_x, train_y, m=5, likelihood=likelihood)
+    train_x, train_y, m=10, likelihood=likelihood)
 # model = SOR_AdaptiveCrossApproximation(
-#     train_x, train_y, likelihood=likelihood, m=5)
+#     train_x, train_y, likelihood=likelihood, m=10)
 # model = KISS(
-#     train_x, train_y, likelihood=likelihood, m=20)
+#     train_x, train_y, likelihood=likelihood, m=4)
 # model = SKIP(
-#     train_x, train_y, likelihood=likelihood, m=20)
+#     train_x, train_y, likelihood=likelihood, m=4)
 
 # Number of epochs
 training_iterations = 100
@@ -84,8 +81,6 @@ def eval():
 
         plot_model(model, likelihood, train_x, train_y, test_x,
                    inducing_points)
-
-
 
     mse_train = gpytorch.metrics.mean_squared_error(model(train_x), train_y)
     mse_test = gpytorch.metrics.mean_squared_error(model(test_x), test_y)
