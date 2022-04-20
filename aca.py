@@ -3,7 +3,7 @@ import torch
 
 def adaptive_cross_approximation(
     A: torch.Tensor, eps: float = 10, max_iter: int = 200,
-    verbose: bool = False
+    precision: float = 1e-6, verbose: bool = False
 ) -> list[int]:
 
     n, _ = A.shape
@@ -19,16 +19,13 @@ def adaptive_cross_approximation(
     alpha = torch.zeros((max_iter,))
     diag = R.diag()
 
-    # Check stop criterion
-    converged = False  # np.trace(R) <= eps
-
     # Iteration counter
     iter = 0
 
-    while not converged and iter < max_iter:
+    while iter < max_iter:
         # Verbose state
         if verbose:
-            print(f"Iter {iter:03d}")#:#: | Trace: {np.trace(R):.3f}")
+            print(f"Iter {iter:03d}")
 
         # Select best point
         i = torch.argmax(torch.abs(diag))
@@ -38,8 +35,11 @@ def adaptive_cross_approximation(
 
         # Update partial residual
         rho[iter] = A[:, i]
+        acc = 0.
         for j in range(iter):
-            rho[iter] = rho[iter] - rho[j, i] * rho[j] / alpha[j]
+            acc += rho[j, i] * rho[j] / alpha[j]
+        rho[iter] -= acc
+        rho[iter][torch.abs(rho[iter]) < precision] = 0
         alpha[iter] = rho[iter, i]
 
         # Check correctness of the residual
@@ -53,6 +53,8 @@ def adaptive_cross_approximation(
         # Update diagonal
         for j in range(n):
             diag[j] = diag[j] - torch.square(rho[iter, j]) / alpha[iter]
+        # Adjust precision
+        diag[torch.abs(diag) < precision] = 0
 
         # Update residual (explicit)
         R = R - torch.outer(
@@ -66,9 +68,6 @@ def adaptive_cross_approximation(
 
         # Append example
         inducing_points.append(i)
-
-        # Update convergence
-        converged = False  # np.trace(R) <= eps
 
         # Update iteration
         iter += 1
