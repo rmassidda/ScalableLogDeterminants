@@ -30,7 +30,7 @@ def load_elevators() -> tuple[np.ndarray, ...]:
 
 
 def load_precipitations(
-        max_points: Optional[int] = 10000,
+        max_points: Optional[int] = 2000,
         seed: int = 42) -> tuple[np.ndarray, ...]:
 
     # List to accumulate the examples
