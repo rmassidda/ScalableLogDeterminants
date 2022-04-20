@@ -6,6 +6,7 @@ from utils import load_precipitations, load_audio, load_redundant_wave
 from utils import load_elevators
 from utils import plot_model, plot_data
 import gpytorch
+import time
 import torch
 
 
@@ -136,18 +137,21 @@ data = {
             'mll': [],
             'mse_train': [],
             'mse_test': [],
+            'time': [],
             'range': [1, 2, 4, 8, 16, 32, 64, 128]
         },
         'adaptive': {
             'mll': [],
             'mse_train': [],
             'mse_test': [],
+            'time': [],
             'range': [1, 2, 4, 8, 16, 32, 64, 128]
         },
         'KISS': {
             'mll': [],
             'mse_train': [],
             'mse_test': [],
+            'time': [],
             'range': [4, 8, 16, 32, 64, 128]
         },
     }
@@ -157,10 +161,12 @@ data = {
 for m in data['redundant_wave']['random']['range']:
     print(f"m = {m}")
     train_x, train_y, test_x, test_y = load_redundant_wave()
+    tic = time.time()
     neg_mll, mse_train, mse_test = experimental_setting(
         model_generator=SOR_RandomInducingPoints, train_x=train_x,
         train_y=train_y, test_x=test_x, test_y=test_y, m=m
     )
+    toc = time.time()
     print(
         f"m = {m} | "
         f"-mll: {neg_mll.item():.3f} | "
@@ -170,15 +176,18 @@ for m in data['redundant_wave']['random']['range']:
     data['redundant_wave']['random']['mll'].append(neg_mll.item())
     data['redundant_wave']['random']['mse_train'].append(mse_train.item())
     data['redundant_wave']['random']['mse_test'].append(mse_test.item())
+    data['redundant_wave']['random']['time'].append(toc - tic)
 
 # Experiment 1b: Adaptive inducing points
 for m in data['redundant_wave']['adaptive']['range']:
     print(f"m = {m}")
     train_x, train_y, test_x, test_y = load_redundant_wave()
+    tic = time.time()
     neg_mll, mse_train, mse_test = experimental_setting(
         model_generator=SOR_AdaptiveCrossApproximation, train_x=train_x,
         train_y=train_y, test_x=test_x, test_y=test_y, m=m
     )
+    toc = time.time()
     print(
         f"m = {m} | "
         f"-mll: {neg_mll.item():.3f} | "
@@ -188,15 +197,18 @@ for m in data['redundant_wave']['adaptive']['range']:
     data['redundant_wave']['adaptive']['mll'].append(neg_mll.item())
     data['redundant_wave']['adaptive']['mse_train'].append(mse_train.item())
     data['redundant_wave']['adaptive']['mse_test'].append(mse_test.item())
+    data['redundant_wave']['adaptive']['time'].append(toc - tic)
 
 # Experiment 1c: KISS
 for m in data['redundant_wave']['KISS']['range']:
     print(f"m = {m}")
     train_x, train_y, test_x, test_y = load_redundant_wave()
+    tic = time.time()
     neg_mll, mse_train, mse_test = experimental_setting(
         model_generator=KISS, train_x=train_x,
         train_y=train_y, test_x=test_x, test_y=test_y, m=m
     )
+    toc = time.time()
     print(
         f"m = {m} | "
         f"-mll: {neg_mll.item():.3f} | "
@@ -206,8 +218,10 @@ for m in data['redundant_wave']['KISS']['range']:
     data['redundant_wave']['KISS']['mll'].append(neg_mll.item())
     data['redundant_wave']['KISS']['mse_train'].append(mse_train.item())
     data['redundant_wave']['KISS']['mse_test'].append(mse_test.item())
+    data['redundant_wave']['KISS']['time'].append(toc - tic)
 
 # Plot the results
 plot_data(data, 'redundant_wave', 'mll')
 plot_data(data, 'redundant_wave', 'mse_train')
 plot_data(data, 'redundant_wave', 'mse_test')
+plot_data(data, 'redundant_wave', 'time')
