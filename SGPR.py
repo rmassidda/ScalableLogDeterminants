@@ -2,6 +2,7 @@ from models import SOR_AdaptiveCrossApproximation
 from models import SOR_RandomInducingPoints
 from models import KISS
 from utils import load_redundant_wave
+from utils import load_precipitations
 from utils import plot_model, plot_data
 import gpytorch
 import numpy as np
@@ -9,21 +10,35 @@ import time
 import torch
 
 
+def plot_init(
+    model_generator, train_x, train_y, test_x, test_y, m
+):
+    # Preprocessing
+    train_x = torch.Tensor(train_x)
+    train_y = torch.Tensor(train_y)
+    test_x = torch.Tensor(test_x)
+    test_y = torch.Tensor(test_y)
+
+    print(
+        f"Train shape: {train_x.shape, train_y.shape} | "
+        f"Test shape: {test_x.shape, test_y.shape}"
+    )
+
+    # Init model
+    likelihood = gpytorch.likelihoods.GaussianLikelihood()
+    model = model_generator(
+        train_x, train_y, likelihood=likelihood, m=m)
+    model.eval()
+    likelihood.eval()
+    # Plot model with the inducing points
+    plot_model(model, likelihood, train_x, train_y, test_x,
+               model.covar_module.inducing_points)
+
+
 def eval(model, likelihood, mll, train_x, train_y, test_x, test_y):
     # Evaluation mode
     model.eval()
     likelihood.eval()
-
-    # Plotting if 1-D
-    if train_x.shape[1] == 1:
-        # Eventually get inducing points
-        if isinstance(model, SOR_RandomInducingPoints) or \
-           isinstance(model, SOR_AdaptiveCrossApproximation):
-            inducing_points = model.covar_module.inducing_points
-        else:
-            inducing_points = None
-        plot_model(model, likelihood, train_x, train_y, test_x,
-                   inducing_points)
 
     # Evaluation
     output = model(train_x)
@@ -103,10 +118,6 @@ def experimental_setting(
     # "Loss" for GPs - the marginal log likelihood
     mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
 
-    # eval(
-    #     model, likelihood, mll, train_x, train_y, test_x, test_y
-    # )
-
     train(
         model, likelihood, mll, train_x, train_y, test_x, test_y,
         training_iterations
@@ -163,7 +174,8 @@ def repeat_experiment(dataset_getter, model_generator, m_range, runs=1):
 def main(n_runs: int = 5):
     # Experimental results
     data = {
-        'redundant_wave': {}
+        'redundant_wave': {},
+        'precipitations': {}
     }
 
     # Experiment 1a: Random inducing points
@@ -195,6 +207,45 @@ def main(n_runs: int = 5):
     plot_data(data, 'redundant_wave', 'mse_train')
     plot_data(data, 'redundant_wave', 'mse_test')
     plot_data(data, 'redundant_wave', 'time')
+
+    # Experiment 2: Show the different inizializations on redundant waves
+    tx, ty, vx, vy = load_redundant_wave()
+    plot_init(
+        SOR_RandomInducingPoints, tx, ty, vx, vy, 6
+    )
+    plot_init(
+        SOR_AdaptiveCrossApproximation, tx, ty, vx, vy, 6
+    )
+
+    # # Experiment 3a: Random inducing points
+    # data['precipitations']['random'] = repeat_experiment(
+    #     dataset_getter=load_precipitations,
+    #     model_generator=SOR_RandomInducingPoints,
+    #     m_range=[1, 2, 4, 8, 16, 32, 64, 128],
+    #     runs=n_runs
+    # )
+
+    # # Experiment 3b: Adaptive inducing points
+    # data['precipitations']['adaptive'] = repeat_experiment(
+    #     dataset_getter=load_precipitations,
+    #     model_generator=SOR_AdaptiveCrossApproximation,
+    #     m_range=[1, 2, 4, 8, 16, 32, 64, 128],
+    #     runs=n_runs
+    # )
+
+    # # Experiment 3c: KISS
+    # data['precipitations']['KISS'] = repeat_experiment(
+    #     dataset_getter=load_precipitations,
+    #     model_generator=KISS,
+    #     m_range=[4, 8, 16, 32, 64, 128],
+    #     runs=n_runs
+    # )
+
+    # # Plot the results
+    # plot_data(data, 'precipitations', 'mll')
+    # plot_data(data, 'precipitations', 'mse_train')
+    # plot_data(data, 'precipitations', 'mse_test')
+    # plot_data(data, 'precipitations', 'time')
 
 
 if __name__ == "__main__":
