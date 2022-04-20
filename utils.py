@@ -29,7 +29,9 @@ def load_elevators() -> tuple[np.ndarray, ...]:
     return train_x, train_y, test_x, test_y
 
 
-def load_precipitations() -> tuple[np.ndarray, ...]:
+def load_precipitations(
+        max_points: Optional[int] = 10000,
+        seed: int = 42) -> tuple[np.ndarray, ...]:
 
     # List to accumulate the examples
     X = []
@@ -58,10 +60,18 @@ def load_precipitations() -> tuple[np.ndarray, ...]:
     # Make the typechecker happy
     assert isinstance(X, np.ndarray) and isinstance(y, np.ndarray)
 
+    # Fix random seed
+    np.random.seed(seed)
+
     # Permutate samples
     perm = np.random.permutation(X.shape[0])
     X = X[perm]
     y = y[perm]
+
+    # Keep only max_points
+    if max_points is not None:
+        X = X[:max_points]
+        y = y[:max_points]
 
     # Split into training and test sets
     train_x = X[:int(0.8*X.shape[0])]
