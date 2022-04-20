@@ -1,11 +1,10 @@
 from models import SOR_AdaptiveCrossApproximation
 from models import SOR_RandomInducingPoints
 from models import KISS
-from models import SKIP
-from utils import load_precipitations, load_audio, load_redundant_wave
-from utils import load_elevators
+from utils import load_redundant_wave
 from utils import plot_model, plot_data
 import gpytorch
+import numpy as np
 import time
 import torch
 
@@ -104,9 +103,9 @@ def experimental_setting(
     # "Loss" for GPs - the marginal log likelihood
     mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
 
-    eval(
-        model, likelihood, mll, train_x, train_y, test_x, test_y
-    )
+    # eval(
+    #     model, likelihood, mll, train_x, train_y, test_x, test_y
+    # )
 
     train(
         model, likelihood, mll, train_x, train_y, test_x, test_y,
@@ -118,110 +117,85 @@ def experimental_setting(
     )
 
 
-# Read elevators
-# train_x, train_y, test_x, test_y = load_elevators()
+def repeat_experiment(dataset_getter, model_generator, m_range, runs=1):
+    # Experimental results
+    res_mll = np.zeros((runs, len(m_range)))
+    res_mse_train = np.zeros((runs, len(m_range)))
+    res_mse_test = np.zeros((runs, len(m_range)))
+    res_time = np.zeros((runs, len(m_range)))
 
-# Read precipitations
-# train_x, train_y, test_x, test_y = load_precipitations()
+    for run in range(runs):
+        for m_idx, m in enumerate(m_range):
+            print(f"m = {m}")
+            train_x, train_y, test_x, test_y = dataset_getter()
+            tic = time.time()
+            neg_mll, mse_train, mse_test = experimental_setting(
+                model_generator=model_generator, train_x=train_x,
+                train_y=train_y, test_x=test_x, test_y=test_y, m=m
+            )
+            toc = time.time()
+            print(
+                f"m = {m} | "
+                f"-mll: {neg_mll.item():.3f} | "
+                f"mse_train = {mse_train.item()} |"
+                f"mse_test = {mse_test.item()}")
 
-# Read audio
-# train_x, train_y, test_x, test_y = load_audio()
+            res_mll[run, m_idx] = neg_mll.item()
+            res_mse_train[run, m_idx] = mse_train.item()
+            res_mse_test[run, m_idx] = mse_test.item()
+            res_time[run, m_idx] = toc - tic
 
-# Read redundant wave
-# train_x, train_y, test_x, test_y = load_redundant_wave()
+    # Average the results over the runs
+    res_mll = np.mean(res_mll, axis=0)
+    res_mse_train = np.mean(res_mse_train, axis=0)
+    res_mse_test = np.mean(res_mse_test, axis=0)
+    res_time = np.mean(res_time, axis=0)
 
-# Experiment 1: Increasing m on the redundant wave dataset
-data = {
-    'redundant_wave': {
-        'random': {
-            'mll': [],
-            'mse_train': [],
-            'mse_test': [],
-            'time': [],
-            'range': [1, 2, 4, 8, 16, 32, 64, 128]
-        },
-        'adaptive': {
-            'mll': [],
-            'mse_train': [],
-            'mse_test': [],
-            'time': [],
-            'range': [1, 2, 4, 8, 16, 32, 64, 128]
-        },
-        'KISS': {
-            'mll': [],
-            'mse_train': [],
-            'mse_test': [],
-            'time': [],
-            'range': [4, 8, 16, 32, 64, 128]
-        },
+    return {
+        'mll': res_mll,
+        'mse_train': res_mse_train,
+        'mse_test': res_mse_test,
+        'time': res_time,
+        'range': m_range
     }
-}
 
-# Experiment 1a: Random inducing points
-for m in data['redundant_wave']['random']['range']:
-    print(f"m = {m}")
-    train_x, train_y, test_x, test_y = load_redundant_wave()
-    tic = time.time()
-    neg_mll, mse_train, mse_test = experimental_setting(
-        model_generator=SOR_RandomInducingPoints, train_x=train_x,
-        train_y=train_y, test_x=test_x, test_y=test_y, m=m
+
+def main(n_runs: int = 5):
+    # Experimental results
+    data = {
+        'redundant_wave': {}
+    }
+
+    # Experiment 1a: Random inducing points
+    data['redundant_wave']['random'] = repeat_experiment(
+        dataset_getter=load_redundant_wave,
+        model_generator=SOR_RandomInducingPoints,
+        m_range=[1, 2, 4, 8, 16, 32, 64, 128],
+        runs=n_runs
     )
-    toc = time.time()
-    print(
-        f"m = {m} | "
-        f"-mll: {neg_mll.item():.3f} | "
-        f"mse_train = {mse_train.item()} |"
-        f"mse_test = {mse_test.item()}")
 
-    data['redundant_wave']['random']['mll'].append(neg_mll.item())
-    data['redundant_wave']['random']['mse_train'].append(mse_train.item())
-    data['redundant_wave']['random']['mse_test'].append(mse_test.item())
-    data['redundant_wave']['random']['time'].append(toc - tic)
-
-# Experiment 1b: Adaptive inducing points
-for m in data['redundant_wave']['adaptive']['range']:
-    print(f"m = {m}")
-    train_x, train_y, test_x, test_y = load_redundant_wave()
-    tic = time.time()
-    neg_mll, mse_train, mse_test = experimental_setting(
-        model_generator=SOR_AdaptiveCrossApproximation, train_x=train_x,
-        train_y=train_y, test_x=test_x, test_y=test_y, m=m
+    # Experiment 1b: Adaptive inducing points
+    data['redundant_wave']['adaptive'] = repeat_experiment(
+        dataset_getter=load_redundant_wave,
+        model_generator=SOR_AdaptiveCrossApproximation,
+        m_range=[1, 2, 4, 8, 16, 32, 64, 128],
+        runs=n_runs
     )
-    toc = time.time()
-    print(
-        f"m = {m} | "
-        f"-mll: {neg_mll.item():.3f} | "
-        f"mse_train = {mse_train.item()} |"
-        f"mse_test = {mse_test.item()}")
 
-    data['redundant_wave']['adaptive']['mll'].append(neg_mll.item())
-    data['redundant_wave']['adaptive']['mse_train'].append(mse_train.item())
-    data['redundant_wave']['adaptive']['mse_test'].append(mse_test.item())
-    data['redundant_wave']['adaptive']['time'].append(toc - tic)
-
-# Experiment 1c: KISS
-for m in data['redundant_wave']['KISS']['range']:
-    print(f"m = {m}")
-    train_x, train_y, test_x, test_y = load_redundant_wave()
-    tic = time.time()
-    neg_mll, mse_train, mse_test = experimental_setting(
-        model_generator=KISS, train_x=train_x,
-        train_y=train_y, test_x=test_x, test_y=test_y, m=m
+    # Experiment 1c: KISS
+    data['redundant_wave']['KISS'] = repeat_experiment(
+        dataset_getter=load_redundant_wave,
+        model_generator=KISS,
+        m_range=[4, 8, 16, 32, 64, 128],
+        runs=n_runs
     )
-    toc = time.time()
-    print(
-        f"m = {m} | "
-        f"-mll: {neg_mll.item():.3f} | "
-        f"mse_train = {mse_train.item()} |"
-        f"mse_test = {mse_test.item()}")
 
-    data['redundant_wave']['KISS']['mll'].append(neg_mll.item())
-    data['redundant_wave']['KISS']['mse_train'].append(mse_train.item())
-    data['redundant_wave']['KISS']['mse_test'].append(mse_test.item())
-    data['redundant_wave']['KISS']['time'].append(toc - tic)
+    # Plot the results
+    plot_data(data, 'redundant_wave', 'mll')
+    plot_data(data, 'redundant_wave', 'mse_train')
+    plot_data(data, 'redundant_wave', 'mse_test')
+    plot_data(data, 'redundant_wave', 'time')
 
-# Plot the results
-plot_data(data, 'redundant_wave', 'mll')
-plot_data(data, 'redundant_wave', 'mse_train')
-plot_data(data, 'redundant_wave', 'mse_test')
-plot_data(data, 'redundant_wave', 'time')
+
+if __name__ == "__main__":
+    main()
