@@ -36,7 +36,7 @@ class SOR_RandomInducingPoints(gpytorch.models.ExactGP):
         # Sample of m inducing points
         n = train_x.shape[0]
         permutation = torch.randperm(n)
-        inducing_points = train_x[permutation[:m]]
+        inducing_points = train_x[permutation[:m]].detach().clone()
 
         self.base_covar_module = ScaleKernel(RBFKernel())
         self.covar_module = InducingPointKernel(
@@ -83,11 +83,11 @@ class SOR_AdaptiveCrossApproximation(gpytorch.models.ExactGP):
 
         # Identify inducing points
         inducing_points = adaptive_cross_approximation(
-            K, max_iter=m,
+            K.detach().cpu(), max_iter=m,
         )
 
         # Select inducing points
-        inducing_points = train_x[inducing_points, :]
+        inducing_points = train_x[inducing_points, :].detach().clone()
         print(f"Inducing points: {inducing_points.shape}")
 
         self.covar_module = InducingPointKernel(
