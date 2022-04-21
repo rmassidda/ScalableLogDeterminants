@@ -163,8 +163,6 @@ def plot_model(model: gpytorch.models.ExactGP, likelihood,
         # Eventually plot vertical lines at the inducing points
         if inducing_points is not None:
             ax.vlines(inducing_points.numpy(), -3, 3, linestyles='dashed')
-            # ax.plot(inducing_points.numpy(), np.zeros(inducing_points.shape[0]),
-            #         'k|', markersize=15)
 
         # Get timestamp
         timestamp = f"{time.time():.2f}"
@@ -180,23 +178,26 @@ def plot_data(data, dataset, metric):
     # Log scale y
     plt.yscale('log')
 
-    plt.plot(
-        data[dataset]['random']['range'],
-        data[dataset]['random'][metric],
-        label='Random inducing points'
-    )
+    if 'random' in data[dataset]:
+        plt.plot(
+            data[dataset]['random']['range'],
+            data[dataset]['random'][metric],
+            label='Random inducing points'
+        )
 
-    plt.plot(
-        data[dataset]['adaptive']['range'],
-        data[dataset]['adaptive'][metric],
-        label='Adaptive inducing points'
-    )
+    if 'adaptive' in data[dataset]:
+        plt.plot(
+            data[dataset]['adaptive']['range'],
+            data[dataset]['adaptive'][metric],
+            label='Adaptive inducing points'
+        )
 
-    plt.plot(
-        data[dataset]['KISS']['range'],
-        data[dataset]['KISS'][metric],
-        label='KISS'
-    )
+    if 'KISS' in data[dataset]:
+        plt.plot(
+            data[dataset]['KISS']['range'],
+            data[dataset]['KISS'][metric],
+            label='KISS'
+        )
 
     # Show legend
     plt.legend()
