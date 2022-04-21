@@ -2,7 +2,7 @@ from models import KISS
 # from models import SKIP
 from models import SOR_AdaptiveCrossApproximation
 from models import SOR_RandomInducingPoints
-# from utils import load_elevators
+from utils import load_elevators
 from utils import load_precipitations
 from utils import load_redundant_wave
 from utils import plot_model, plot_data
@@ -133,7 +133,8 @@ def experimental_setting(
     )
 
 
-def repeat_experiment(dataset_getter, model_generator, m_range, runs=1):
+def repeat_experiment(dataset_getter, model_generator, m_range, runs=1,
+                      training_iterations=100):
     # Experimental results
     res_mll = np.zeros((runs, len(m_range)))
     res_mse_train = np.zeros((runs, len(m_range)))
@@ -147,7 +148,8 @@ def repeat_experiment(dataset_getter, model_generator, m_range, runs=1):
             tic = time.time()
             neg_mll, mse_train, mse_test = experimental_setting(
                 model_generator=model_generator, train_x=train_x,
-                train_y=train_y, test_x=test_x, test_y=test_y, m=m
+                train_y=train_y, test_x=test_x, test_y=test_y, m=m,
+                training_iterations=training_iterations
             )
             toc = time.time()
             print(
@@ -186,24 +188,25 @@ def main(n_runs: int = 5):
 
     # Range
     range_inducing = [1, 2, 4, 8, 16, 32, 64, 128]
+    small_range_inducing = [1, 2, 4, 8, 16, 32, 64]
     range_kiss = [4, 8, 16, 32, 64, 128]
     small_range_kiss = [4, 8, 16, 32, 48]
 
-    # # Experiment 0a: Random inducing points
-    # data['elevators']['random'] = repeat_experiment(
-    #     dataset_getter=load_elevators,
-    #     model_generator=SOR_RandomInducingPoints,
-    #     m_range=range_inducing,
-    #     runs=n_runs
-    # )
+    # Experiment 0a: Random inducing points
+    data['elevators']['random'] = repeat_experiment(
+        dataset_getter=load_elevators,
+        model_generator=SOR_RandomInducingPoints,
+        m_range=small_range_inducing,
+        runs=n_runs, training_iterations=1
+    )
 
-    # # Experiment 0b: Adaptive inducing points
-    # data['elevators']['adaptive'] = repeat_experiment(
-    #     dataset_getter=load_elevators,
-    #     model_generator=SOR_AdaptiveCrossApproximation,
-    #     m_range=range_inducing,
-    #     runs=n_runs
-    # )
+    # Experiment 0b: Adaptive inducing points
+    data['elevators']['adaptive'] = repeat_experiment(
+        dataset_getter=load_elevators,
+        model_generator=SOR_AdaptiveCrossApproximation,
+        m_range=small_range_inducing,
+        runs=n_runs, training_iterations=1
+    )
 
     # # Experiment 0c: KISS
     # data['elevators']['KISS'] = repeat_experiment(
@@ -213,11 +216,11 @@ def main(n_runs: int = 5):
     #     runs=n_runs
     # )
 
-    # # Experiment 0: Plot the results
-    # plot_data(data, 'elevators', 'mll')
-    # plot_data(data, 'elevators', 'mse_train')
-    # plot_data(data, 'elevators', 'mse_test')
-    # plot_data(data, 'elevators', 'time')
+    # Experiment 0: Plot the results
+    plot_data(data, 'elevators', 'mll', log=False)
+    plot_data(data, 'elevators', 'mse_train', log=False)
+    plot_data(data, 'elevators', 'mse_test', log=False)
+    plot_data(data, 'elevators', 'time')
 
     # Experiment 1a: Random inducing points
     data['redundant_wave']['random'] = repeat_experiment(
