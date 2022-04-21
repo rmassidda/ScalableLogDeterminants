@@ -187,7 +187,7 @@ def main(n_runs: int = 5):
     # Range
     range_inducing = [1, 2, 4, 8, 16, 32, 64, 128]
     range_kiss = [4, 8, 16, 32, 64, 128]
-    small_range_kiss = [4, 8, 16, 32]
+    small_range_kiss = [4, 8, 16, 32, 48]
 
     # # Experiment 0a: Random inducing points
     # data['elevators']['random'] = repeat_experiment(
