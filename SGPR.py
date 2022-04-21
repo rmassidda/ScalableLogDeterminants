@@ -6,6 +6,7 @@ from utils import load_precipitations
 from utils import plot_model, plot_data
 import gpytorch
 import numpy as np
+import pickle
 import time
 import torch
 
@@ -179,11 +180,15 @@ def main(n_runs: int = 5):
         'precipitations': {}
     }
 
+    # Range
+    range_inducing = [1, 2, 4, 8, 16, 32, 64, 128]
+    range_kiss = [4, 8, 16, 32, 64, 128]
+
     # Experiment 1a: Random inducing points
     data['redundant_wave']['random'] = repeat_experiment(
         dataset_getter=load_redundant_wave,
         model_generator=SOR_RandomInducingPoints,
-        m_range=[1, 2, 4, 8, 16, 32, 64, 128],
+        m_range=range_inducing,
         runs=n_runs
     )
 
@@ -191,7 +196,7 @@ def main(n_runs: int = 5):
     data['redundant_wave']['adaptive'] = repeat_experiment(
         dataset_getter=load_redundant_wave,
         model_generator=SOR_AdaptiveCrossApproximation,
-        m_range=[1, 2, 4, 8, 16, 32, 64, 128],
+        m_range=range_inducing,
         runs=n_runs
     )
 
@@ -199,7 +204,7 @@ def main(n_runs: int = 5):
     data['redundant_wave']['KISS'] = repeat_experiment(
         dataset_getter=load_redundant_wave,
         model_generator=KISS,
-        m_range=[4, 8, 16, 32, 64, 128],
+        m_range=range_kiss,
         runs=n_runs
     )
 
@@ -222,7 +227,7 @@ def main(n_runs: int = 5):
     data['precipitations']['random'] = repeat_experiment(
         dataset_getter=load_precipitations,
         model_generator=SOR_RandomInducingPoints,
-        m_range=[1, 2, 4, 8, 16, 32, 64, 128],
+        m_range=range_inducing,
         runs=n_runs
     )
 
@@ -230,7 +235,7 @@ def main(n_runs: int = 5):
     data['precipitations']['adaptive'] = repeat_experiment(
         dataset_getter=load_precipitations,
         model_generator=SOR_AdaptiveCrossApproximation,
-        m_range=[1, 2, 4, 8, 16, 32, 64, 128],
+        m_range=range_inducing,
         runs=n_runs
     )
 
@@ -238,7 +243,7 @@ def main(n_runs: int = 5):
     data['precipitations']['KISS'] = repeat_experiment(
         dataset_getter=load_precipitations,
         model_generator=KISS,
-        m_range=[4, 8, 16, 32, 64, 128],
+        m_range=range_kiss,
         runs=n_runs
     )
 
@@ -247,6 +252,10 @@ def main(n_runs: int = 5):
     plot_data(data, 'precipitations', 'mse_train')
     plot_data(data, 'precipitations', 'mse_test')
     plot_data(data, 'precipitations', 'time')
+
+    # Store results
+    with open('results.pkl', 'wb') as f:
+        pickle.dump(data, f)
 
 
 if __name__ == "__main__":
