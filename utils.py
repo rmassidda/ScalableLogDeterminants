@@ -10,6 +10,9 @@ import torch
 def load_elevators() -> tuple[np.ndarray, ...]:
     data = torch.Tensor(loadmat('data/elevators.mat')['data'])
     X = data[:, :-1].detach().numpy()
+    # Preprocess as in the original notebook
+    X = X - X.min(0)[0]
+    X = 2 * (X / X.max(0)[0]) - 1
     y = data[:, -1].detach().numpy()
 
     # Fix random seed
