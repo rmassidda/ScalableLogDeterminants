@@ -1,7 +1,8 @@
 from models import KISS
+# from models import SKIP
 from models import SOR_AdaptiveCrossApproximation
 from models import SOR_RandomInducingPoints
-from utils import load_elevators
+# from utils import load_elevators
 from utils import load_precipitations
 from utils import load_redundant_wave
 from utils import plot_model, plot_data
@@ -204,11 +205,11 @@ def main(n_runs: int = 5):
     #     runs=n_runs
     # )
 
-    # Experiment 0c: KISS
+    # # Experiment 0c: KISS
     # data['elevators']['KISS'] = repeat_experiment(
     #     dataset_getter=load_elevators,
-    #     model_generator=KISS,
-    #     m_range=range_kiss,
+    #     model_generator=SKIP,
+    #     m_range=small_range_kiss,
     #     runs=n_runs
     # )
 
@@ -293,4 +294,4 @@ def main(n_runs: int = 5):
 
 
 if __name__ == "__main__":
-    main(1)
+    main(5)
