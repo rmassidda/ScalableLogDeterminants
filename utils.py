@@ -7,6 +7,19 @@ import time
 import torch
 
 
+SMALL_SIZE = 12
+MEDIUM_SIZE = 17
+BIGGER_SIZE = 20
+
+plt.rc('font', size=MEDIUM_SIZE)         # controls default text sizes
+plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=MEDIUM_SIZE)   # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
+
 def load_elevators() -> tuple[np.ndarray, ...]:
     data = torch.Tensor(loadmat('data/elevators.mat')['data'])
     X = data[:, :-1].detach().numpy()
@@ -170,33 +183,52 @@ def plot_model(model: gpytorch.models.ExactGP, likelihood,
         plt.savefig(f"{timestamp}.png")
 
 
-def plot_data(data, dataset, metric):
+def plot_data(data, dataset, metric, log=True):
     plt.figure(figsize=(12, 10))
     plt.xlabel("m")
-    plt.ylabel(metric)
+
+    # Set label
+    if metric == 'mll':
+        # latex label
+        ylabel = "$\\log P(y \\mid X, \\theta)$"
+    elif metric == 'mse_train':
+        # latex label
+        ylabel = "MSE on Training Set"
+    elif metric == 'mse_test':
+        # latex label
+        ylabel = "MSE on Test Set"
+    elif metric == 'time':
+        ylabel = "Time (s)"
+    else:
+        ylabel = metric
+    plt.ylabel(ylabel)
 
     # Log scale y
-    plt.yscale('log')
+    if log:
+        plt.yscale('log')
 
     if 'random' in data[dataset]:
         plt.plot(
             data[dataset]['random']['range'],
             data[dataset]['random'][metric],
-            label='Random inducing points'
+            label='Random inducing points',
+            linewidth=3
         )
 
     if 'adaptive' in data[dataset]:
         plt.plot(
             data[dataset]['adaptive']['range'],
             data[dataset]['adaptive'][metric],
-            label='Adaptive inducing points'
+            label='Adaptive inducing points',
+            linewidth=3
         )
 
     if 'KISS' in data[dataset]:
         plt.plot(
             data[dataset]['KISS']['range'],
             data[dataset]['KISS'][metric],
-            label='KISS'
+            label='KISS-GP',
+            linewidth=3
         )
 
     # Show legend
