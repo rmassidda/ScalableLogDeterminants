@@ -14,7 +14,9 @@ import torch
 
 
 # Set cuda device
-torch.cuda.set_device(3)
+USE_CUDA = False
+if USE_CUDA:
+    torch.cuda.set_device(3)
 
 
 def plot_init(
@@ -65,7 +67,8 @@ def eval(model, likelihood, mll, train_x, train_y, test_x, test_y):
     #     f"MSE test: {mse_test.item():.3f}")
 
     # Empty cuda cache
-    torch.cuda.empty_cache()
+    if USE_CUDA:
+        torch.cuda.empty_cache()
 
     return neg_mll.item(), mse_train.item(), mse_test.item()
 
@@ -97,7 +100,8 @@ def train(model, likelihood, mll, train_x, train_y, test_x, test_y, epochs):
         optimizer.step()
 
     # Empty cuda cache
-    torch.cuda.empty_cache()
+    if USE_CUDA:
+        torch.cuda.empty_cache()
 
 
 def experimental_setting(
@@ -105,10 +109,15 @@ def experimental_setting(
     m, training_iterations=100
 ):
     # Preprocessing
-    train_x = torch.Tensor(train_x).cuda()
-    train_y = torch.Tensor(train_y).cuda()
-    test_x = torch.Tensor(test_x).cuda()
-    test_y = torch.Tensor(test_y).cuda()
+    train_x = torch.Tensor(train_x)
+    train_y = torch.Tensor(train_y)
+    test_x = torch.Tensor(test_x)
+    test_y = torch.Tensor(test_y)
+    if USE_CUDA:
+        train_x = train_x.cuda()
+        train_y = train_y.cuda()
+        test_x = test_x.cuda()
+        test_y = test_y.cuda()
 
     print(
         f"Train shape: {train_x.shape, train_y.shape} | "
@@ -116,9 +125,13 @@ def experimental_setting(
     )
 
     # Init model
-    likelihood = gpytorch.likelihoods.GaussianLikelihood().cuda()
+    likelihood = gpytorch.likelihoods.GaussianLikelihood()
     model = model_generator(
-        train_x, train_y, likelihood=likelihood, m=m).cuda()
+        train_x, train_y, likelihood=likelihood, m=m)
+
+    if USE_CUDA:
+        likelihood = likelihood.cuda()
+        model = model.cuda()
 
     # "Loss" for GPs - the marginal log likelihood
     mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
@@ -192,35 +205,37 @@ def main(n_runs: int = 5):
     range_kiss = [4, 8, 16, 32, 64, 128]
     small_range_kiss = [4, 8, 16, 32, 48]
 
-    # Experiment 0a: Random inducing points
-    data['elevators']['random'] = repeat_experiment(
-        dataset_getter=load_elevators,
-        model_generator=SOR_RandomInducingPoints,
-        m_range=small_range_inducing,
-        runs=n_runs, training_iterations=1
-    )
+    # Experiments only on GPU
+    if USE_CUDA:
+        # Experiment 0a: Random inducing points
+        data['elevators']['random'] = repeat_experiment(
+            dataset_getter=load_elevators,
+            model_generator=SOR_RandomInducingPoints,
+            m_range=small_range_inducing,
+            runs=n_runs, training_iterations=1
+        )
 
-    # Experiment 0b: Adaptive inducing points
-    data['elevators']['adaptive'] = repeat_experiment(
-        dataset_getter=load_elevators,
-        model_generator=SOR_AdaptiveCrossApproximation,
-        m_range=small_range_inducing,
-        runs=n_runs, training_iterations=1
-    )
+        # Experiment 0b: Adaptive inducing points
+        data['elevators']['adaptive'] = repeat_experiment(
+            dataset_getter=load_elevators,
+            model_generator=SOR_AdaptiveCrossApproximation,
+            m_range=small_range_inducing,
+            runs=n_runs, training_iterations=1
+        )
 
-    # # Experiment 0c: KISS
-    # data['elevators']['KISS'] = repeat_experiment(
-    #     dataset_getter=load_elevators,
-    #     model_generator=SKIP,
-    #     m_range=small_range_kiss,
-    #     runs=n_runs
-    # )
+        # # Experiment 0c: KISS
+        # data['elevators']['KISS'] = repeat_experiment(
+        #     dataset_getter=load_elevators,
+        #     model_generator=SKIP,
+        #     m_range=small_range_kiss,
+        #     runs=n_runs
+        # )
 
-    # Experiment 0: Plot the results
-    plot_data(data, 'elevators', 'mll', log=False)
-    plot_data(data, 'elevators', 'mse_train', log=False)
-    plot_data(data, 'elevators', 'mse_test', log=False)
-    plot_data(data, 'elevators', 'time')
+        # Experiment 0: Plot the results
+        plot_data(data, 'elevators', 'mll', log=False)
+        plot_data(data, 'elevators', 'mse_train', log=False)
+        plot_data(data, 'elevators', 'mse_test', log=False)
+        plot_data(data, 'elevators', 'time')
 
     # Experiment 1a: Random inducing points
     data['redundant_wave']['random'] = repeat_experiment(
