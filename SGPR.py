@@ -14,7 +14,7 @@ import torch
 
 
 # Set cuda device
-USE_CUDA = False
+USE_CUDA = True
 if USE_CUDA:
     torch.cuda.set_device(3)
 
@@ -203,7 +203,7 @@ def main(n_runs: int = 5):
     range_inducing = [1, 2, 4, 8, 16, 32, 64, 128]
     small_range_inducing = [1, 2, 4, 8, 16, 32, 64]
     range_kiss = [4, 8, 16, 32, 64, 128]
-    small_range_kiss = [4, 8, 16, 32, 48]
+    small_range_kiss = [4, 8, 16, 32, 48, 64]
 
     # Experiments only on GPU
     if USE_CUDA:
