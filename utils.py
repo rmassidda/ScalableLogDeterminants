@@ -170,13 +170,15 @@ def plot_model(model: gpytorch.models.ExactGP, likelihood,
         ax.plot(test_x.cpu().numpy(), observed_pred.mean.cpu().numpy(), 'b')
         # Shade between the lower and upper confidence bounds
         ax.fill_between(
-            test_x.cpu().numpy().flatten(), lower.cpu().numpy(), upper.cpu().numpy(), alpha=0.5)
+            test_x.cpu().numpy().flatten(), lower.cpu().numpy(),
+            upper.cpu().numpy(), alpha=0.5)
         ax.set_ylim([-3, 3])
         ax.legend(['Observed Data', 'Mean', 'Confidence'])
 
         # Eventually plot vertical lines at the inducing points
         if inducing_points is not None:
-            ax.vlines(inducing_points.cpu().numpy(), -3, 3, linestyles='dashed')
+            ax.vlines(
+              inducing_points.cpu().numpy(), -3, 3, linestyles='dashed')
 
         # Get timestamp
         timestamp = f"{time.time():.2f}"
