@@ -2,7 +2,6 @@ from models import KISS
 # from models import SKIP
 from models import SOR_AdaptiveCrossApproximation
 from models import SOR_RandomInducingPoints
-from utils import load_elevators
 from utils import load_precipitations
 from utils import load_redundant_wave
 from utils import plot_model, plot_data
@@ -16,7 +15,10 @@ import torch
 # Set cuda device
 USE_CUDA = True
 if USE_CUDA:
-    torch.cuda.set_device(3)
+    # Set device
+    torch.cuda.set_device(0)
+    # Empty cache
+    torch.cuda.empty_cache()
 
 
 def plot_init(
@@ -28,6 +30,12 @@ def plot_init(
     test_x = torch.Tensor(test_x)
     test_y = torch.Tensor(test_y)
 
+    if USE_CUDA:
+        train_x = train_x.cuda()
+        train_y = train_y.cuda()
+        test_x = test_x.cuda()
+        test_y = test_y.cuda()
+
     print(
         f"Train shape: {train_x.shape, train_y.shape} | "
         f"Test shape: {test_x.shape, test_y.shape}"
@@ -38,6 +46,9 @@ def plot_init(
     model = model_generator(
         train_x, train_y, likelihood=likelihood, m=m)
     model.base_covar_module.base_kernel.lengthscale = 0.5
+    if USE_CUDA:
+        likelihood = likelihood.cuda()
+        model = model.cuda()
     model.eval()
     likelihood.eval()
     # Plot model with the inducing points
@@ -196,7 +207,7 @@ def main(n_runs: int = 5):
     data = {
         'redundant_wave': {},
         'precipitations': {},
-        'elevators': {}
+        'prec_init': {}
     }
 
     # Range
@@ -205,38 +216,7 @@ def main(n_runs: int = 5):
     range_kiss = [4, 8, 16, 32, 64, 128]
     small_range_kiss = [4, 8, 16, 32, 48, 64]
 
-    # Experiments only on GPU
-    if USE_CUDA:
-        # Experiment 0a: Random inducing points
-        data['elevators']['random'] = repeat_experiment(
-            dataset_getter=load_elevators,
-            model_generator=SOR_RandomInducingPoints,
-            m_range=small_range_inducing,
-            runs=n_runs, training_iterations=1
-        )
-
-        # Experiment 0b: Adaptive inducing points
-        data['elevators']['adaptive'] = repeat_experiment(
-            dataset_getter=load_elevators,
-            model_generator=SOR_AdaptiveCrossApproximation,
-            m_range=small_range_inducing,
-            runs=n_runs, training_iterations=1
-        )
-
-        # # Experiment 0c: KISS
-        # data['elevators']['KISS'] = repeat_experiment(
-        #     dataset_getter=load_elevators,
-        #     model_generator=SKIP,
-        #     m_range=small_range_kiss,
-        #     runs=n_runs
-        # )
-
-        # Experiment 0: Plot the results
-        plot_data(data, 'elevators', 'mll', log=False)
-        plot_data(data, 'elevators', 'mse_train', log=False)
-        plot_data(data, 'elevators', 'mse_test', log=False)
-        plot_data(data, 'elevators', 'time')
-
+    # Experiment 1: Redundant Waves
     # Experiment 1a: Random inducing points
     data['redundant_wave']['random'] = repeat_experiment(
         dataset_getter=load_redundant_wave,
@@ -267,7 +247,7 @@ def main(n_runs: int = 5):
     plot_data(data, 'redundant_wave', 'mse_test')
     plot_data(data, 'redundant_wave', 'time')
 
-    # Experiment 2: Show the different inizializations on redundant waves
+    # Experiment 2a: Show the different inizializations on redundant waves
     tx, ty, vx, vy = load_redundant_wave()
     plot_init(
         SOR_RandomInducingPoints, tx, ty, vx, vy, 10
@@ -275,6 +255,24 @@ def main(n_runs: int = 5):
     plot_init(
         SOR_AdaptiveCrossApproximation, tx, ty, vx, vy, 10
     )
+
+    # Experiment 2b: Show the different inizializations on precipitations
+    data['prec_init']['random'] = repeat_experiment(
+        dataset_getter=load_precipitations,
+        model_generator=SOR_RandomInducingPoints,
+        m_range=small_range_inducing,
+        runs=n_runs, training_iterations=1
+    )
+    data['prec_init']['adaptive'] = repeat_experiment(
+        dataset_getter=load_precipitations,
+        model_generator=SOR_AdaptiveCrossApproximation,
+        m_range=small_range_inducing,
+        runs=n_runs, training_iterations=1
+    )
+    plot_data(data, 'prec_init', 'mll', log=False)
+    plot_data(data, 'prec_init', 'mse_train', log=False)
+    plot_data(data, 'prec_init', 'mse_test', log=False)
+    plot_data(data, 'prec_init', 'time')
 
     # Experiment 3a: Random inducing points
     data['precipitations']['random'] = repeat_experiment(

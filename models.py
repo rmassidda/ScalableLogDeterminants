@@ -82,9 +82,15 @@ class SOR_AdaptiveCrossApproximation(gpytorch.models.ExactGP):
         K = self.base_covar_module(train_x, train_x)
 
         # Identify inducing points
-        inducing_points = adaptive_cross_approximation(
-            K.detach().cpu(), max_iter=m,
-        )
+        if train_x.is_cuda:
+            self.base_covar_module = self.base_covar_module.cuda()
+            inducing_points = adaptive_cross_approximation(
+                K, max_iter=m,
+            )
+        else:
+            inducing_points = adaptive_cross_approximation(
+                K.detach().cpu(), max_iter=m,
+            )
 
         # Select inducing points
         inducing_points = train_x[inducing_points, :].detach().clone()

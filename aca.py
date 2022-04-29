@@ -58,6 +58,11 @@ def adaptive_cross_approximation(
     alpha = torch.zeros((max_iter,))
     diag = R.diag()
 
+    # Eventually move to GPU
+    if diag.is_cuda:
+        rho = rho.cuda()
+        alpha = alpha.cuda()
+
     # Iteration counter
     iter = 0
 
