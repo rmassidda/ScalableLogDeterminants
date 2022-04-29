@@ -156,7 +156,8 @@ def plot_model(model: gpytorch.models.ExactGP, likelihood,
                inducing_points: Optional[torch.Tensor] = None) -> None:
     with torch.no_grad():
         # Forward pass
-        observed_pred = likelihood(model(test_x))
+        with gpytorch.settings.cholesky_jitter(1e-1):
+            observed_pred = likelihood(model(test_x))
 
         # Initialize plot
         f, ax = plt.subplots(1, 1, figsize=(16, 10))
@@ -164,18 +165,18 @@ def plot_model(model: gpytorch.models.ExactGP, likelihood,
         # Get upper and lower confidence bounds
         lower, upper = observed_pred.confidence_region()
         # Plot training data as black stars
-        ax.plot(train_x.numpy(), train_y.numpy(), 'k*')
+        ax.plot(train_x.cpu().numpy(), train_y.cpu().numpy(), 'k*')
         # Plot predictive means as blue line
-        ax.plot(test_x.numpy(), observed_pred.mean.numpy(), 'b')
+        ax.plot(test_x.cpu().numpy(), observed_pred.mean.cpu().numpy(), 'b')
         # Shade between the lower and upper confidence bounds
         ax.fill_between(
-            test_x.numpy().flatten(), lower.numpy(), upper.numpy(), alpha=0.5)
+            test_x.cpu().numpy().flatten(), lower.cpu().numpy(), upper.cpu().numpy(), alpha=0.5)
         ax.set_ylim([-3, 3])
         ax.legend(['Observed Data', 'Mean', 'Confidence'])
 
         # Eventually plot vertical lines at the inducing points
         if inducing_points is not None:
-            ax.vlines(inducing_points.numpy(), -3, 3, linestyles='dashed')
+            ax.vlines(inducing_points.cpu().numpy(), -3, 3, linestyles='dashed')
 
         # Get timestamp
         timestamp = f"{time.time():.2f}"
