@@ -95,8 +95,7 @@ def adaptive_cross_approximation(
             assert torch.allclose(alpha[iter], R[i, i])
 
         # Update diagonal
-        for j in range(n):
-            diag[j] = diag[j] - torch.square(rho[iter, j]) / alpha[iter]
+        diag = diag - torch.square(rho[iter]) / alpha[iter]
 
         # Adjust precision for the diagonal
         if precision is not None:
