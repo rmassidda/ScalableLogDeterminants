@@ -214,7 +214,7 @@ def main(n_runs: int = 5):
     range_inducing = [1, 2, 4, 8, 16, 32, 64, 128]
     small_range_inducing = [1, 2, 4, 8, 16, 32, 64]
     range_kiss = [4, 8, 16, 32, 64, 128]
-    small_range_kiss = [4, 8, 16, 32, 48, 64]
+    small_range_kiss = [4, 8, 16, 32, 48]
 
     # Experiment 1: Redundant Waves
     # Experiment 1a: Random inducing points
